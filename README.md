@@ -1,0 +1,147 @@
+# E-Commerce Delivery Time Prediction Using Linear Regression
+
+## Project Overview
+
+This project was completed as **Task 1: Linear Regression** for the **IEEE PUA Student Branch – AI/DS Team**.
+
+The goal is to build a baseline machine learning model that predicts e-commerce delivery time in days using order-level information from the Brazilian E-Commerce Public Dataset by Olist. The project covers data preparation, exploratory data analysis, outlier handling, model training, evaluation, and visualization.
+
+## Objectives
+
+- Prepare an order-level dataset from the original CSV files using SQL.
+- Explore the data and check data quality.
+- Investigate the distribution of delivery times and relationships between numerical variables.
+- Apply an IQR-based method to identify and remove outliers in the target variable for a comparison model.
+- Train and evaluate a Linear Regression model.
+- Visualize actual versus predicted delivery times and the distribution of prediction errors.
+
+## Dataset
+
+The project uses the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
+
+The notebook combines order, customer, and order-item information to create one row per delivered order. Delivery time is calculated as the difference between the purchase timestamp and the customer delivery timestamp, expressed in days.
+
+### Features used by the model
+
+| Feature | Description |
+| --- | --- |
+| `customer_state` | Customer's Brazilian state; converted into dummy variables for modeling |
+| `item_count` | Number of items in the order |
+| `unique_products` | Number of distinct products in the order |
+| `total_price` | Total item price for the order |
+| `total_freight` | Total freight value for the order |
+| `delivery_days` | Target variable: elapsed days between purchase and delivery |
+
+The initial prepared dataset contains **96,470 orders**. The notebook checks for missing values, duplicate records, data types, and summary statistics before modeling.
+
+## Workflow
+
+### 1. Data preparation with SQL
+
+- Load the original order, customer, and order-item CSV files.
+- Store the tables in a local SQLite database.
+- Use SQL aggregation to calculate order-level item counts, distinct product counts, total prices, and total freight.
+- Join these aggregates to customer and order information.
+- Keep delivered orders with valid purchase and delivery timestamps.
+
+### 2. Exploratory Data Analysis
+
+The notebook uses summary statistics and visualizations to inspect the dataset, including:
+- A histogram of delivery time.
+- Scatter plots comparing delivery time with freight cost and total order price.
+- Boxplots to inspect delivery-time outliers.
+
+### 3. Outlier handling
+
+Outliers in `delivery_days` are identified using the Interquartile Range (IQR) rule:
+
+- Q1: 6.77 days
+- Q3: 15.72 days
+- IQR: 8.95 days
+- Lower bound: -6.655 days
+- Upper bound: 29.145 days
+
+Using these bounds, **4,903 records** were removed from the modeling dataset, leaving **91,567 records**. The filtering step is based on the target variable, so the resulting evaluation reflects orders within these IQR bounds rather than all delivery cases. Long delivery times may be genuine observations; this is a modeling choice for comparison, not proof that those records are invalid.
+
+### 4. Model training
+
+- Encode `customer_state` using one-hot/dummy encoding.
+- Use an 80/20 train-test split with `random_state=42`.
+- Train a `LinearRegression` model from scikit-learn.
+- Generate predictions for the test set.
+
+### 5. Evaluation
+
+The model is evaluated using Mean Absolute Error (MAE), Mean Squared Error (MSE), Root Mean Squared Error (RMSE), and the coefficient of determination (R²).
+
+| Metric | Result after IQR filtering |
+| --- | ---: |
+| MAE | 4.2403 days |
+| MSE | 29.0973 |
+| RMSE | 5.3942 days |
+| R² | 0.2239 |
+
+The MAE indicates that predictions differ from actual delivery times by about **4.24 days on average in absolute terms** on the test set. The R² value indicates that the model explains approximately **22.4% of the variance** in delivery time for this filtered evaluation set. This is a baseline model with limited explanatory performance; the results should not be interpreted as a measure of performance on the removed long-delivery cases.
+
+### 6. Visualizations
+
+The notebook includes visualizations for:
+- Delivery-time distribution.
+- Relationships between delivery time and price/freight.
+- Delivery-time outliers before/after filtering.
+- Actual versus predicted delivery time.
+- Distribution of prediction errors.
+
+## Repository Structure
+
+```text
+.
+├── Brazilian_E-Commerce_Public_Dataset.ipynb
+├── olist_orders_dataset.csv
+├── olist_customers_dataset.csv
+├── olist_order_items_dataset.csv
+└── olist_ml_dataset.csv
+```
+
+The three original CSV files are required to run the notebook from the beginning because the notebook creates the SQLite tables and builds the modeling dataset. The `olist_ml_dataset.csv` file is generated by the SQL preparation step and is also saved as an intermediate dataset.
+
+## How to Run
+
+1. Clone or download this repository.
+2. Ensure the three required source CSV files are in the same directory as the notebook:
+   - `olist_orders_dataset.csv`
+   - `olist_customers_dataset.csv`
+   - `olist_order_items_dataset.csv`
+3. Install the Python packages listed below.
+4. Open `Brazilian_E-Commerce_Public_Dataset.ipynb` in Jupyter Notebook or VS Code.
+5. Run the notebook cells in order.
+
+### Requirements
+
+- Python 3
+- pandas
+- NumPy
+- Matplotlib
+- Seaborn
+- scikit-learn
+
+SQLite support is provided by Python's built-in `sqlite3` module.
+
+Install the packages with:
+
+```bash
+pip install pandas numpy matplotlib seaborn scikit-learn
+```
+
+## Limitations and Possible Improvements
+
+- The current model is a baseline and has limited R² performance.
+- The IQR filter is applied to the target variable and excludes some long-delivery observations from the evaluation.
+- Further work could compare results with and without outlier filtering, evaluate a baseline using the unfiltered test population, inspect additional predictive features, and compare Linear Regression with other regression models.
+- For a more rigorous evaluation, outlier thresholds and preprocessing decisions should be determined using training data only, then applied consistently to the test data.
+
+## Acknowledgment
+
+Completed as **Task 1: Linear Regression** for the **IEEE PUA Student Branch – AI/DS Team**.
+
+The dataset is provided by Olist and is available through the public Kaggle dataset linked above.
